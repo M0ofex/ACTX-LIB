@@ -15,6 +15,6 @@
 
 ## ⚙️ Installation
 ```bash
-git clone [https://github.com/your-username/ACTX.git](https://github.com/your-username/ACTX.git)
+git clone [https://github.com/M0ofex/ACTX-LIB.git](https://github.com/M0ofex/ACTX.git)
 cd ACTX
 pip install -r requirements.txt
