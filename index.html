@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACTX | Professional Movie Intelligence</title>
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent: #00d2ff;
+            --text-dim: #94a3b8;
+        }
+
+        /* --- CROSS-BROWSER SCROLLBAR FIX --- */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 210, 255, 0.5) #0f172a;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 210, 255, 0.3);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        body {
+            margin: 0; padding: 40px 20px;
+            background: radial-gradient(circle at center, #1e293b, #0f172a);
+            color: white; font-family: 'Inter', sans-serif;
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; box-sizing: border-box;
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--border);
+            border-radius: 32px;
+            padding: 3rem; width: 100%;
+            max-width: 850px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            margin-bottom: 40px;
+        }
+
+        .search-box { display: flex; gap: 12px; margin-bottom: 1rem; }
+        
+        input {
+            flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border);
+            padding: 14px 20px; border-radius: 14px; color: white; outline: none;
+            transition: 0.3s;
+        }
+        input:focus { border-color: var(--accent); }
+        
+        button {
+            background: var(--accent); color: #000; border: none;
+            padding: 0 25px; border-radius: 14px; font-weight: 700; cursor: pointer;
+        }
+
+        .history-list { display: flex; justify-content: center; gap: 8px; margin-bottom: 2rem; flex-wrap: wrap; }
+        .h-tag {
+            font-size: 0.75rem; color: var(--text-dim); cursor: pointer;
+            padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);
+        }
+
+        .content-wrapper { display: flex; flex-direction: row; gap: 40px; text-align: left; }
+        
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%; animation: shimmer 1.5s infinite linear;
+            border-radius: 12px;
+        }
+
+        .profile-img { width: 220px; height: 320px; border-radius: 24px; border: 1px solid var(--border); object-fit: cover; flex-shrink: 0; }
+
+        .movies-strip { 
+            display: flex; gap: 20px; overflow-x: auto; 
+            overflow-y: hidden;
+            padding: 15px 10px 30px 10px; 
+            margin-top: 15px; 
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            border-radius: 14px;
+        }
+
+        .movie-item { flex-shrink: 0; width: 105px; cursor: pointer; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .movie-item:hover { transform: translateY(-5px); }
+        .movie-poster { width: 105px; height: 155px; border-radius: 14px; border: 1px solid var(--border); object-fit: cover; box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
+        .movie-item.active .movie-poster { border-color: var(--accent); box-shadow: 0 0 15px rgba(0,210,255,0.3); }
+
+        .detail-panel {
+            background: rgba(0,0,0,0.2); border: 1px solid var(--border);
+            border-radius: 20px; padding: 20px; margin-top: 20px;
+            display: none; animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; }
+        .label { color: var(--accent); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="glass-card">
+    <h1 style="font-weight: 300; text-align: center; margin-bottom: 2rem; letter-spacing: 2px;">ACTX ENGINE</h1>
+    <div class="search-box">
+        <input type="text" id="actorInput" placeholder="Search for Actors, Movies or Series...">
+        <button onclick="fetchData()">Find</button>
+    </div>
+    
+    <div id="history" class="history-list"></div>
+
+    <div id="loader" style="display: none;">
+        <div class="content-wrapper">
+            <div class="skeleton" style="width: 220px; height: 320px;"></div>
+            <div style="flex: 1; min-width: 0;">
+                <div class="skeleton" style="width: 70%; height: 40px; margin-bottom: 15px;"></div>
+                <div class="skeleton" style="width: 40%; height: 20px; margin-bottom: 30px;"></div>
+                <div class="skeleton" style="width: 100%; height: 150px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="result" class="content-wrapper" style="display: none;">
+        <img id="p-img" class="profile-img" src="">
+        <div style="flex: 1; min-width: 0;">
+            <h2 id="p-name" style="margin: 0; font-size: 2rem;"></h2>
+            <div id="p-bio" style="color: var(--text-dim); font-size: 0.9rem; margin-top: 10px;"></div>
+
+            <div id="section-title" style="font-size: 0.7rem; color: var(--accent); font-weight: bold; letter-spacing: 1px; margin-top: 30px;">FILMOGRAPHY</div>
+            <div id="p-works" class="movies-strip"></div>
+
+            <div id="detailPanel" class="detail-panel">
+                <h3 id="m-title" style="margin: 0 0 15px; font-size: 1.1rem; color: var(--accent);"></h3>
+                <div class="detail-grid" id="detailGrid">
+                    <div><span class="label" id="lbl-1">Director:</span> <span id="m-char"></span></div>
+                    <div><span class="label" id="lbl-2">Status:</span> <span id="m-rel"></span></div>
+                    <div><span class="label" id="lbl-3">Runtime:</span> <span id="m-dir"></span></div>
+                    <div><span class="label" id="lbl-4">Budget:</span> <span id="m-dur"></span></div>
+                    <div><span class="label" id="lbl-5">Rating:</span> <span id="m-rate"></span>/10</div>
+                    <div><span class="label" id="lbl-6">Writer:</span> <span id="m-writ"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let searchHistory = JSON.parse(localStorage.getItem('actx_history') || '[]');
+    let worksData = [];
+
+    function renderHistory() {
+        document.getElementById('history').innerHTML = searchHistory.map(name => `
+            <span class="h-tag" onclick="autoSearch('${name}')">${name}</span>
+        `).join('');
+    }
+
+    function autoSearch(name) {
+        document.getElementById('actorInput').value = name;
+        fetchData();
+    }
+
+    async function fetchData() {
+        const query = document.getElementById('actorInput').value;
+        if (!query) return;
+
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+
+        try {
+            const res = await fetch(`http://127.0.0.1:5000/api/search/universal?query=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            
+            if (data.person && !data.person.error) {
+                renderPerson(data.person);
+            } else if (data.movie && !data.movie.error) {
+                renderMedia(data.movie, 'movie');
+            } else if (data.tv && !data.tv.error) {
+                renderMedia(data.tv, 'tv');
+            } else {
+                throw new Error("No record found");
+            }
+
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('result').style.display = 'flex';
+        } catch(e) { 
+            document.getElementById('loader').style.display = 'none';
+            alert("Record failure or server offline.");
+        }
+    }
+
+    function renderPerson(data) {
+        updateHistory(data.name);
+        document.getElementById('p-img').src = data.image || 'https://via.placeholder.com/220x320/1e293b/94a3b8?text=No+Photo';
+        document.getElementById('p-name').innerText = data.name;
+        document.getElementById('p-bio').innerHTML = `Born: ${data.birthday}<br>Place: ${data.place}`;
+        document.getElementById('section-title').innerText = "FILMOGRAPHY";
+        
+        worksData = data.works;
+        document.getElementById('p-works').innerHTML = data.works.map((m, i) => {
+            // Smart Fallback: If no poster, use a themed placeholder with the movie's first letter
+            const initial = m.title ? m.title.charAt(0).toUpperCase() : '?';
+            const posterSrc = m.poster || `https://via.placeholder.com/105x155/1e293b/00d2ff?text=${initial}`;
+            
+            return `
+            <div class="movie-item" onclick="showDetail(${i}, this)">
+                <img class="movie-poster" src="${posterSrc}" title="${m.title} - ${m.character}">
+            </div>
+            `;
+        }).join('');
+        document.getElementById('detailPanel').style.display = 'none';
+        
+        // Call the setup function for mouse wheel scrolling after rendering
+        setupHorizontalScroll();
+    }
+
+    function renderMedia(data, type) {
+        updateHistory(data.title);
+        document.getElementById('p-img').src = data.poster || 'https://via.placeholder.com/220x320';
+        document.getElementById('p-name').innerText = data.title;
+        
+        // Smart Release Date Logic
+        const releaseDateObj = new Date(data.release_date);
+        const isReleased = data.status === "Released" || releaseDateObj <= new Date();
+        const releaseLabel = isReleased ? "Released:" : "Expected:";
+        
+        document.getElementById('p-bio').innerHTML = `<b>${releaseLabel}</b> ${data.release_date || 'TBA'}<br>Genres: ${data.genres.join(', ')}`;
+        document.getElementById('section-title').innerText = "OVERVIEW";
+        document.getElementById('p-works').innerHTML = `<p style="font-size:0.85rem; color:var(--text-dim); line-height:1.6;">${data.overview}</p>`;
+        
+        const panel = document.getElementById('detailPanel');
+        panel.style.display = 'block';
+        document.getElementById('m-title').innerText = type === 'movie' ? "Movie Analytics" : "Series Analytics";
+        
+        document.getElementById('lbl-1').innerText = type === 'movie' ? "Director:" : "Creator:";
+        document.getElementById('m-char').innerText = data.director || data.creator || 'N/A';
+        document.getElementById('lbl-2').innerText = "Status:";
+        document.getElementById('m-rel').innerText = data.status;
+        document.getElementById('lbl-3').innerText = type === 'movie' ? "Runtime:" : "Episodes:";
+        document.getElementById('m-dir').innerText = type === 'movie' ? `${data.runtime} min` : data.episodes_count;
+
+        document.getElementById('lbl-4').innerText = type === 'movie' ? "Budget:" : "Seasons:";
+        if (type === 'movie') {
+            const formattedBudget = data.budget > 0 
+                ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(data.budget)
+                : "Not Disclosed";
+            document.getElementById('m-dur').innerText = formattedBudget;
+        } else {
+            document.getElementById('m-dur').innerText = data.seasons_count;
+        }
+
+        document.getElementById('m-rate').innerText = data.rating;
+        document.getElementById('lbl-6').innerText = "Writer:";
+        document.getElementById('m-writ').innerText = data.writer || "N/A";
+    }
+
+    function updateHistory(name) {
+        if (!searchHistory.includes(name)) {
+            searchHistory.unshift(name);
+            searchHistory = searchHistory.slice(0, 3);
+            localStorage.setItem('actx_history', JSON.stringify(searchHistory));
+            renderHistory();
+        }
+    }
+
+    async function showDetail(index, element) {
+        document.querySelectorAll('.movie-item').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        const m = worksData[index];
+        const panel = document.getElementById('detailPanel');
+        const grid = document.getElementById('detailGrid');
+        
+        panel.style.display = 'block';
+        grid.style.opacity = '0.3';
+        
+        document.getElementById('m-title').innerText = m.title;
+        document.getElementById('lbl-1').innerText = "Character:";
+        document.getElementById('m-char').innerText = m.character;
+        
+        // Smart Release Date Logic for Actor's Works
+        const movieDateObj = new Date(m.release);
+        const isReleased = m.release && movieDateObj <= new Date();
+        document.getElementById('lbl-2').innerText = isReleased ? "Released:" : "Expected:";
+        document.getElementById('m-rel').innerText = m.release || 'TBA';
+
+        try {
+            const res = await fetch(`http://127.0.0.1:5000/api/movie/${m.id}`);
+            const extra = await res.json();
+            document.getElementById('lbl-3').innerText = "Director:";
+            document.getElementById('m-dir').innerText = extra.director;
+            document.getElementById('lbl-4').innerText = "Duration:";
+            document.getElementById('m-dur').innerText = `${extra.runtime} min`;
+            document.getElementById('m-rate').innerText = extra.rating;
+            document.getElementById('lbl-6').innerText = "Writer:";
+            document.getElementById('m-writ').innerText = extra.writer;
+            grid.style.opacity = '1';
+        } catch(e) { console.error("Metadata retrieval failed"); }
+    }
+
+    function setupHorizontalScroll() {
+        const strip = document.querySelector('.movies-strip');
+        if (!strip) return;
+
+        // Prevent attaching multiple listeners if renderPerson is called multiple times
+        strip.removeEventListener('wheel', handleWheelScroll);
+        strip.addEventListener('wheel', handleWheelScroll, { passive: false });
+    }
+
+    function handleWheelScroll(e) {
+        // Only override if the user is scrolling vertically (e.deltaY)
+        if (e.deltaY !== 0) {
+            e.preventDefault(); // Stop page from scrolling down
+            // Scroll the strip horizontally based on the vertical scroll amount
+            this.scrollLeft += e.deltaY; 
+        }
+    }
+
+    renderHistory();
+</script>
+</body>
+</html>
