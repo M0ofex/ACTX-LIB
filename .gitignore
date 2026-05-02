@@ -234,3 +234,6 @@ build/
 *.egg-info/
 
 *vscode*
+ACTX-Frontend/config.js
+__pycache__/
+.venv/

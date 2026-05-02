@@ -37,7 +37,6 @@ body {
 }
 
 .main-title { font-weight: 300; text-align: center; margin-bottom: 2rem; letter-spacing: 2px; }
-
 .search-box { display: flex; gap: 12px; margin-bottom: 1rem; }
 
 input {
@@ -69,7 +68,6 @@ button {
 }
 
 #section-title { font-size: 0.7rem; color: var(--accent); font-weight: bold; letter-spacing: 1px; margin-top: 15px; margin-bottom: 5px; }
-
 .overview-text { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; margin-top: 0; }
 
 .movie-item { flex-shrink: 0; width: 105px; cursor: pointer; transition: 0.3s; }
@@ -89,7 +87,41 @@ button {
 
 .error-msg { color: var(--error); font-size: 0.8rem; text-align: center; margin-top: 10px; display: none; }
 
+/* Crew System Styles */
+.crew-toggle-btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 8px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-top: 15px;
+    transition: 0.3s;
+}
+.crew-toggle-btn:hover { background: var(--accent); color: #000; }
+
+.crew-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.crew-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+.crew-name { font-size: 0.85rem; font-weight: bold; display: block; }
+.crew-job { font-size: 0.75rem; color: var(--text-dim); }
+
 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
 .skeleton {

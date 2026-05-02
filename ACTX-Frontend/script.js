@@ -1,4 +1,7 @@
-const API_BASE_URL = "http://127.0.0.1:5000";
+import CONFIG from './config.js';
+
+// Now use it anywhere
+const API_BASE_URL = CONFIG.API_BASE_URL;
 let searchHistory = JSON.parse(localStorage.getItem('actx_history') || '[]');
 let worksData = [];
 
@@ -88,6 +91,8 @@ function renderPerson(data) {
     }).join('');
 
     document.getElementById('detailPanel').style.display = 'none';
+    document.getElementById('crewToggle').style.display = 'none';
+    document.getElementById('crewGrid').style.display = 'none';
     setupHorizontalScroll();
 }
 
@@ -134,6 +139,39 @@ function renderMedia(data, type) {
 
     document.getElementById('m-rate').innerText = data.rating;
     document.getElementById('m-writ').innerText = data.writer || "N/A";
+
+    renderCrew(data.crew);
+}
+
+function toggleCrew() {
+    const grid = document.getElementById('crewGrid');
+    const btn = document.getElementById('crewToggle');
+    if (grid.style.display === 'none' || grid.style.display === '') {
+        grid.style.display = 'grid';
+        btn.innerHTML = '<i class="fas fa-times"></i> Hide Crew';
+    } else {
+        grid.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-users"></i> Show Crew';
+    }
+}
+
+function renderCrew(crewList) {
+    const crewGrid = document.getElementById('crewGrid');
+    const crewToggle = document.getElementById('crewToggle');
+    crewGrid.style.display = 'none';
+    crewToggle.innerHTML = '<i class="fas fa-users"></i> Show Crew';
+
+    if (crewList && crewList.length > 0) {
+        crewToggle.style.display = 'inline-block';
+        crewGrid.innerHTML = crewList.map(member => `
+            <div class="crew-item">
+                <span class="crew-name">${member.name}</span>
+                <span class="crew-job">${member.job || member.role}</span>
+            </div>
+        `).join('');
+    } else {
+        crewToggle.style.display = 'none';
+    }
 }
 
 function updateHistory(name) {
@@ -171,6 +209,7 @@ async function showDetail(index, element) {
         document.getElementById('m-rate').innerText = extra.rating || '0';
         document.getElementById('m-writ').innerText = extra.writer || 'N/A';
         grid.style.opacity = '1';
+        renderCrew(extra.crew);
     } catch(e) { console.error("Metadata retrieval failed"); }
 }
 

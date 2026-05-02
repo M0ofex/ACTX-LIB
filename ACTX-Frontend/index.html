@@ -49,11 +49,16 @@
                     <div><span class="label" id="lbl-5"><i class="fas fa-star"></i> Rating:</span> <span id="m-rate"></span>/10</div>
                     <div><span class="label" id="lbl-6"><i class="fas fa-pen-nib"></i> Writer:</span> <span id="m-writ"></span></div>
                 </div>
+                <!-- Crew Toggle Section -->
+                <button id="crewToggle" class="crew-toggle-btn" onclick="toggleCrew()" style="display: none;">
+                    <i class="fas fa-users"></i> Show Crew
+                </button>
+                <div id="crewGrid" class="crew-grid"></div>
             </div>
         </div>
     </div>
 </div>
 
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
