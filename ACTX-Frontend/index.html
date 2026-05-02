@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <title>ACTX | Professional Movie Intelligence</title>
+</head>
+<body>
+
+<div class="glass-card">
+    <h1 class="main-title">ACTX ENGINE</h1>
+    <div class="search-box">
+        <input type="text" id="actorInput" placeholder="Search for Actors, Movies or Series...">
+        <button onclick="fetchData()">Find</button>
+    </div>
+    <div id="error-display" class="error-msg"></div>
+    
+    <div id="history" class="history-list"></div>
+
+    <div id="loader" style="display: none;">
+        <div class="content-wrapper">
+            <div class="skeleton profile-skeleton"></div>
+            <div class="info-skeleton">
+                <div class="skeleton title-skeleton"></div>
+                <div class="skeleton subtitle-skeleton"></div>
+                <div class="skeleton text-skeleton"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="result" class="content-wrapper" style="display: none;">
+        <img id="p-img" class="profile-img" src="">
+        <div class="main-info">
+            <h2 id="p-name"></h2>
+            <div id="p-bio" class="bio-text"></div>
+
+            <div id="section-title">FILMOGRAPHY</div>
+            <div id="p-works" class="movies-strip"></div>
+
+            <div id="detailPanel" class="detail-panel">
+                <h3 id="m-title"></h3>
+                <div class="detail-grid" id="detailGrid">
+                    <div><span class="label" id="lbl-1"><i class="fas fa-video"></i> Director:</span> <span id="m-char"></span></div>
+                    <div><span class="label" id="lbl-2"><i class="fas fa-info-circle"></i> Status:</span> <span id="m-rel"></span></div>
+                    <div><span class="label" id="lbl-3"><i class="fas fa-clock"></i> Runtime:</span> <span id="m-dir"></span></div>
+                    <div><span class="label" id="lbl-4"><i class="fas fa-money-bill-wave"></i> Budget:</span> <span id="m-dur"></span></div>
+                    <div><span class="label" id="lbl-5"><i class="fas fa-star"></i> Rating:</span> <span id="m-rate"></span>/10</div>
+                    <div><span class="label" id="lbl-6"><i class="fas fa-pen-nib"></i> Writer:</span> <span id="m-writ"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
