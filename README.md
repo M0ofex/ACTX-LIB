@@ -15,6 +15,14 @@
 
 ## ⚙️ Installation
 ```bash
-git clone [https://github.com/M0ofex/ACTX-LIB.git](https://github.com/M0ofex/ACTX.git)
-cd ACTX
+git clone [https://github.com/M0ofex/ACTX-LIB.git](https://github.com/M0ofex/ACTX-LIB.git)
+cd ACTX-LIB
 pip install -r requirements.txt
+```
+## 📋 Roadmap
+```bash
+[ ] Wikipedia Integration: Fallback mechanism for missing posters and localized bios.
+[ ] Unified Data Scheme: Standardizing data models across multiple sources (TMDB, IMDB, Wiki).
+[ ] Plugin Architecture: Enabling community-driven scrapers for niche databases.
+[ ] AI-Ready API: Optimizing data structures for seamless LLM grounding.
+```
