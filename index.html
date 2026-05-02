@@ -211,19 +211,23 @@
         
         worksData = data.works;
         document.getElementById('p-works').innerHTML = data.works.map((m, i) => {
-            // Smart Fallback: If no poster, use a themed placeholder with the movie's first letter
+            // Define the fallback initial
             const initial = m.title ? m.title.charAt(0).toUpperCase() : '?';
-            const posterSrc = m.poster || `https://via.placeholder.com/105x155/1e293b/00d2ff?text=${initial}`;
+            const fallbackSrc = `https://via.placeholder.com/105x155/1e293b/00d2ff?text=${initial}`;
+            const posterSrc = m.poster || fallbackSrc;
             
             return `
             <div class="movie-item" onclick="showDetail(${i}, this)">
-                <img class="movie-poster" src="${posterSrc}" title="${m.title} - ${m.character}">
+                <img class="movie-poster" 
+                     src="${posterSrc}" 
+                     title="${m.title} - ${m.character}"
+                     onerror="this.onerror=null; this.src='${fallbackSrc}';">
             </div>
             `;
         }).join('');
+
         document.getElementById('detailPanel').style.display = 'none';
         
-        // Call the setup function for mouse wheel scrolling after rendering
         setupHorizontalScroll();
     }
 
