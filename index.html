@@ -10,6 +10,7 @@
             --border: rgba(255, 255, 255, 0.1);
             --accent: #00d2ff;
             --text-dim: #94a3b8;
+            --error: #ef4444;
         }
 
         /* --- CROSS-BROWSER SCROLLBAR FIX --- */
@@ -18,22 +19,10 @@
             scrollbar-color: rgba(0, 210, 255, 0.5) #0f172a;
         }
 
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0f172a; 
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 210, 255, 0.3);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent);
-            box-shadow: 0 0 10px var(--accent);
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 210, 255, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 
         body {
             margin: 0; padding: 40px 20px;
@@ -87,17 +76,14 @@
 
         .movies-strip { 
             display: flex; gap: 20px; overflow-x: auto; 
-            overflow-y: hidden;
-            padding: 15px 10px 30px 10px; 
-            margin-top: 15px; 
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
+            overflow-y: hidden; padding: 15px 10px 30px 10px; 
+            margin-top: 15px; scroll-behavior: smooth;
             border-radius: 14px;
         }
 
-        .movie-item { flex-shrink: 0; width: 105px; cursor: pointer; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .movie-item { flex-shrink: 0; width: 105px; cursor: pointer; transition: 0.3s; }
         .movie-item:hover { transform: translateY(-5px); }
-        .movie-poster { width: 105px; height: 155px; border-radius: 14px; border: 1px solid var(--border); object-fit: cover; box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
+        .movie-poster { width: 105px; height: 155px; border-radius: 14px; border: 1px solid var(--border); object-fit: cover; }
         .movie-item.active .movie-poster { border-color: var(--accent); box-shadow: 0 0 15px rgba(0,210,255,0.3); }
 
         .detail-panel {
@@ -110,6 +96,9 @@
 
         .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; }
         .label { color: var(--accent); font-weight: bold; }
+        
+        /* Error Alert Style */
+        .error-msg { color: var(--error); font-size: 0.8rem; text-align: center; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -117,9 +106,11 @@
 <div class="glass-card">
     <h1 style="font-weight: 300; text-align: center; margin-bottom: 2rem; letter-spacing: 2px;">ACTX ENGINE</h1>
     <div class="search-box">
+        <!-- Added id="actorInput" for listener target -->
         <input type="text" id="actorInput" placeholder="Search for Actors, Movies or Series...">
         <button onclick="fetchData()">Find</button>
     </div>
+    <div id="error-display" class="error-msg"></div>
     
     <div id="history" class="history-list"></div>
 
@@ -159,6 +150,8 @@
 </div>
 
 <script>
+    const API_BASE_URL = "http://127.0.0.1:5000";
+    
     let searchHistory = JSON.parse(localStorage.getItem('actx_history') || '[]');
     let worksData = [];
 
@@ -175,13 +168,22 @@
 
     async function fetchData() {
         const query = document.getElementById('actorInput').value;
+        const errorDisplay = document.getElementById('error-display');
         if (!query) return;
 
+        errorDisplay.style.display = 'none';
         document.getElementById('result').style.display = 'none';
         document.getElementById('loader').style.display = 'block';
 
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/search/universal?query=${encodeURIComponent(query)}`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); 
+
+            const res = await fetch(`${API_BASE_URL}/api/search/universal?query=${encodeURIComponent(query)}`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
             const data = await res.json();
             
             if (data.person && !data.person.error) {
@@ -191,14 +193,23 @@
             } else if (data.tv && !data.tv.error) {
                 renderMedia(data.tv, 'tv');
             } else {
-                throw new Error("No record found");
+                throw new Error("EMPTY_DATA");
             }
 
             document.getElementById('loader').style.display = 'none';
             document.getElementById('result').style.display = 'flex';
+
         } catch(e) { 
             document.getElementById('loader').style.display = 'none';
-            alert("Record failure or server offline.");
+            errorDisplay.style.display = 'block';
+            
+            if (e.name === 'AbortError' || e.message.includes('Failed to fetch')) {
+                errorDisplay.innerText = "🚨 Error: Server is offline or unreachable.";
+            } else if (e.message === "EMPTY_DATA") {
+                errorDisplay.innerText = "🔍 No records found for this query.";
+            } else {
+                errorDisplay.innerText = "⚠️ An unexpected error occurred. Please try again.";
+            }
         }
     }
 
@@ -210,16 +221,15 @@
         document.getElementById('section-title').innerText = "FILMOGRAPHY";
         
         worksData = data.works;
-        document.getElementById('p-works').innerHTML = data.works.map((m, i) => {
-            // Define the fallback initial
+        const worksContainer = document.getElementById('p-works');
+        
+        worksContainer.innerHTML = data.works.map((m, i) => {
             const initial = m.title ? m.title.charAt(0).toUpperCase() : '?';
             const fallbackSrc = `https://via.placeholder.com/105x155/1e293b/00d2ff?text=${initial}`;
-            const posterSrc = m.poster || fallbackSrc;
-            
             return `
             <div class="movie-item" onclick="showDetail(${i}, this)">
                 <img class="movie-poster" 
-                     src="${posterSrc}" 
+                     src="${m.poster || fallbackSrc}" 
                      title="${m.title} - ${m.character}"
                      onerror="this.onerror=null; this.src='${fallbackSrc}';">
             </div>
@@ -227,7 +237,6 @@
         }).join('');
 
         document.getElementById('detailPanel').style.display = 'none';
-        
         setupHorizontalScroll();
     }
 
@@ -236,7 +245,6 @@
         document.getElementById('p-img').src = data.poster || 'https://via.placeholder.com/220x320';
         document.getElementById('p-name').innerText = data.title;
         
-        // Smart Release Date Logic
         const releaseDateObj = new Date(data.release_date);
         const isReleased = data.status === "Released" || releaseDateObj <= new Date();
         const releaseLabel = isReleased ? "Released:" : "Expected:";
@@ -251,23 +259,21 @@
         
         document.getElementById('lbl-1').innerText = type === 'movie' ? "Director:" : "Creator:";
         document.getElementById('m-char').innerText = data.director || data.creator || 'N/A';
-        document.getElementById('lbl-2').innerText = "Status:";
         document.getElementById('m-rel').innerText = data.status;
         document.getElementById('lbl-3').innerText = type === 'movie' ? "Runtime:" : "Episodes:";
         document.getElementById('m-dir').innerText = type === 'movie' ? `${data.runtime} min` : data.episodes_count;
 
-        document.getElementById('lbl-4').innerText = type === 'movie' ? "Budget:" : "Seasons:";
         if (type === 'movie') {
-            const formattedBudget = data.budget > 0 
+            document.getElementById('lbl-4').innerText = "Budget:";
+            document.getElementById('m-dur').innerText = data.budget > 0 
                 ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(data.budget)
                 : "Not Disclosed";
-            document.getElementById('m-dur').innerText = formattedBudget;
         } else {
+            document.getElementById('lbl-4').innerText = "Seasons:";
             document.getElementById('m-dur').innerText = data.seasons_count;
         }
 
         document.getElementById('m-rate').innerText = data.rating;
-        document.getElementById('lbl-6').innerText = "Writer:";
         document.getElementById('m-writ').innerText = data.writer || "N/A";
     }
 
@@ -294,22 +300,19 @@
         document.getElementById('lbl-1').innerText = "Character:";
         document.getElementById('m-char').innerText = m.character;
         
-        // Smart Release Date Logic for Actor's Works
         const movieDateObj = new Date(m.release);
         const isReleased = m.release && movieDateObj <= new Date();
         document.getElementById('lbl-2').innerText = isReleased ? "Released:" : "Expected:";
         document.getElementById('m-rel').innerText = m.release || 'TBA';
 
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/movie/${m.id}`);
+            const res = await fetch(`${API_BASE_URL}/api/movie/${m.id}`);
             const extra = await res.json();
-            document.getElementById('lbl-3').innerText = "Director:";
-            document.getElementById('m-dir').innerText = extra.director;
+            document.getElementById('m-dir').innerText = extra.director || 'N/A';
             document.getElementById('lbl-4').innerText = "Duration:";
-            document.getElementById('m-dur').innerText = `${extra.runtime} min`;
-            document.getElementById('m-rate').innerText = extra.rating;
-            document.getElementById('lbl-6').innerText = "Writer:";
-            document.getElementById('m-writ').innerText = extra.writer;
+            document.getElementById('m-dur').innerText = `${extra.runtime || 0} min`;
+            document.getElementById('m-rate').innerText = extra.rating || '0';
+            document.getElementById('m-writ').innerText = extra.writer || 'N/A';
             grid.style.opacity = '1';
         } catch(e) { console.error("Metadata retrieval failed"); }
     }
@@ -317,20 +320,22 @@
     function setupHorizontalScroll() {
         const strip = document.querySelector('.movies-strip');
         if (!strip) return;
-
-        // Prevent attaching multiple listeners if renderPerson is called multiple times
-        strip.removeEventListener('wheel', handleWheelScroll);
-        strip.addEventListener('wheel', handleWheelScroll, { passive: false });
+        strip.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                strip.scrollLeft += e.deltaY; 
+            }
+        }, { passive: false });
     }
 
-    function handleWheelScroll(e) {
-        // Only override if the user is scrolling vertically (e.deltaY)
-        if (e.deltaY !== 0) {
-            e.preventDefault(); // Stop page from scrolling down
-            // Scroll the strip horizontally based on the vertical scroll amount
-            this.scrollLeft += e.deltaY; 
+    /**
+     * LOGIC: Enter Key Search Listener
+     */
+    document.getElementById('actorInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            fetchData();
         }
-    }
+    });
 
     renderHistory();
 </script>
